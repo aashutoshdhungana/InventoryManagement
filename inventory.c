@@ -27,19 +27,19 @@ node;
 // HashTable declaration
 node *Table[TABLESIZE];
 
-bool add(int key, string name, int threshold, int stock, float price)
+bool add()
 {
     //TODO
     return 0;
 }
 
-bool deleteItem(int key)
+bool deleteItem()
 {
     //TODO
     return 0;
 }
 
-bool restock(int key, int num)
+bool restock()
 {
     //TODO
     return 0;
@@ -60,18 +60,7 @@ void inventorySystem(int option)
     switch(option)
     {
         case 1:
-            int k;
-            int t;
-            int s;
-            int p;
-            string n;
-            printf("\nEnter key, name, threshold, stock and price of item");
-            scanf("%i, %s, %i, %i, %f",&k, &n, &t, &s, &p);
-
-            //TODO check if key is unique
-            //
-
-            if (add(k, n, t, s, p))
+            if (add())
             {
                 printf("\nsuccess");
             }
@@ -83,15 +72,11 @@ void inventorySystem(int option)
             break;
 
         case 2:
-            int k;
-            printf("\n Enter the key");
-            scanf("%i", &k);
-
             //TODO check if key exist
 
             //
 
-            if (deleteItem(k))
+            if (deleteItem())
             {
                 printf("\nSuccess!!!!");
             }
@@ -103,15 +88,7 @@ void inventorySystem(int option)
             break;
 
         case 3:
-            int k, num;
-            printf("\n Enter the key and num");
-            scanf("%i, %i", &k, &num);
-
-            //TODO check if key exist and num fills to threshold
-
-            //
-
-            if (restock(k, num))
+            if (restock())
             {
                 printf("\nSuccess!!!!");
             }
