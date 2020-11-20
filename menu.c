@@ -4,5 +4,5 @@
 
 int main(void)
 {
-    //TODO menu
+    inventorySystem(125);
 }

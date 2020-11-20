@@ -1,5 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<stdbool.h>
+#define TABLESIZE 1000 
 // Type defination for string data structure
 typedef char* string;
 
@@ -12,19 +14,56 @@ typedef struct
     int stock;
     float price;
 }
-item;
+itemData;
 
+// Node of Hash Table
+typedef struct node
+{
+    itemData items;
+    struct node *next;
+}
+node;
+
+// HashTable declaration
+node *Table[TABLESIZE];
+
+bool add(int key, string name, int threshold, int stock, float price)
+{
+    //TODO
+    return 0;
+}
+
+bool deleteItem(int key)
+{
+    //TODO
+    return 0;
+}
+
+bool restock(int key, int num)
+{
+    //TODO
+    return 0;
+}
+
+bool restockAll()
+{
+    //TODO
+    return 0;
+}
 void inventorySystem(int option)
 {
     // Opening file
-    File *file = fopen("inventory.txt", "r");
+    FILE *file = fopen("inventory.txt", "r");
 
     //read and insert to a hash table we'll discuss
 
     switch(option)
     {
         case 1:
-            int k, t, s, p;
+            int k;
+            int t;
+            int s;
+            int p;
             string n;
             printf("\nEnter key, name, threshold, stock and price of item");
             scanf("%i, %s, %i, %i, %f",&k, &n, &t, &s, &p);
@@ -52,7 +91,7 @@ void inventorySystem(int option)
 
             //
 
-            if (delete(k))
+            if (deleteItem(k))
             {
                 printf("\nSuccess!!!!");
             }
@@ -100,28 +139,4 @@ void inventorySystem(int option)
             break;
     }
     fclose(file);
-}
-
-bool add(int key, string name, int threshold, int stock, float price)
-{
-    //TODO
-    return 0;
-}
-
-bool deleteItem(int key)
-{
-    //TODO
-    return 0;
-}
-
-bool restock(int key, int num)
-{
-    //TODO
-    return 0;
-}
-
-bool restockAll()
-{
-    //TODO
-    return 0;
 }
