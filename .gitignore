@@ -1,0 +1,6 @@
+// vscode config file
+.vscode
+
+//executable files
+*.exe
+*.o
