@@ -4,5 +4,5 @@
 
 int main(void)
 {
-    inventorySystem(125);
+    inventorySystem(1);
 }
