@@ -2,7 +2,7 @@
 #include<stdlib.h>
 #include<stdbool.h>
 #include<string.h>
-#define TABLESIZE 1000 
+#define TABLESIZE 1000
 // Type defination for string data structure
 typedef char* string;
 
@@ -10,7 +10,7 @@ typedef char* string;
 typedef struct
 {
     int key;
-    string name;
+    char name[20];
     int threshold;
     int stock;
     float price;
@@ -20,7 +20,7 @@ itemData;
 // Node of Hash Table
 typedef struct node
 {
-    itemData items;
+    itemData *items;
     struct node *next;
 }
 node;
@@ -28,6 +28,42 @@ node;
 // HashTable declaration
 node *Table[TABLESIZE];
 
+int hash(int key)
+{
+    return key%1000;
+}
+
+void load(itemData *item)
+{
+    int hashKey = hash(item -> key);
+    node *n = malloc(sizeof(node));
+    if (n == NULL)
+    {
+        printf("Mem Error!!!");
+        exit(1);
+    }
+    n->items = item;
+    n->next =  Table[hashKey];
+    Table[hashKey] = n;
+}
+
+void search (int key)
+{
+    int hashKey = hash(key);
+    node *temp = malloc(sizeof(node));
+    temp = Table[hashKey];
+    while (temp != NULL)
+    {
+        if (temp->items->key == key)
+        {
+            printf("found\n");
+            return;
+        }
+        temp = temp->next;
+    }
+    printf("Not found\n");
+    return;
+}
 bool add(int key, string name, int threshold, int stock, float price)
 {
     //TODO
@@ -51,6 +87,7 @@ bool restockAll()
     //TODO
     return 0;
 }
+
 void inventorySystem(int option)
 {
     // Opening file
@@ -60,7 +97,7 @@ void inventorySystem(int option)
         printf("Inventory.txt couldnot be opened!!!!!\n");
         exit(1);
     }
-    
+
     char line[100];
     while (fgets(line, sizeof(line), file))
     {
@@ -73,7 +110,7 @@ void inventorySystem(int option)
             if (line[i] == '{' || line[i] == ' ' || line[i] == '"')
             {
             }
-            
+
             else if (line[i] == '}')
             {
                 words[j][k] = '\0';
@@ -85,7 +122,7 @@ void inventorySystem(int option)
                 k = 0;
                 j++;
             }
-            
+
             else
             {
                 words[j][k] = line[i];
@@ -93,7 +130,13 @@ void inventorySystem(int option)
             }
             i++;
         }
-        printf("%s, %s, %s, %s, %s\n", words[0], words[1], words[2], words[3], words[4]);
+        itemData item;
+        item.key = atoi(words[0]);
+        strcpy(item.name, words[1]);
+        item.threshold = atoi(words[2]);
+        item.stock = atoi(words[3]);
+        item.price = atof(words[4]);
+        load(&item);//only loading last one
     }
     //read and insert to a hash table we'll discuss
     int k, t, s;
@@ -112,6 +155,7 @@ void inventorySystem(int option)
             scanf("%i", &s);
             printf("Price\t\t|\t");
             scanf("%f", &p);
+            search(1);
             if (add(k, n, t, s, p))
             {
                 printf("\nsuccess");
@@ -123,7 +167,7 @@ void inventorySystem(int option)
             }
             break;
 
-        case 2:         
+        case 2:
             //TODO check if key exist
 
             //
@@ -168,4 +212,5 @@ void inventorySystem(int option)
             break;
     }
     fclose(file);
+    return;
 }
