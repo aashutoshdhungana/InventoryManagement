@@ -11,14 +11,15 @@ typedef char* string;
 // HashTable declaration
 node *Table[TABLESIZE];
 
+//final build needs to have a better hash function this woks for now
 int hash(int key)
 {
     return key%1000;
 }
 
-void load(itemData *item)
+void load(itemData item)
 {
-    int hashKey = hash(item -> key);
+    int hashKey = hash(item.key);
     node *n = malloc(sizeof(node));
     if (n == NULL)
     {
@@ -28,6 +29,7 @@ void load(itemData *item)
     n->items = item;
     n->next =  Table[hashKey];
     Table[hashKey] = n;
+    return;
 }
 
 void search (int key)
@@ -37,7 +39,7 @@ void search (int key)
     temp = Table[hashKey];
     while (temp != NULL)
     {
-        if (temp->items->key == key)
+        if (temp->items.key == key)
         {
             printf("found\n");
             return;
@@ -47,10 +49,23 @@ void search (int key)
     printf("Not found\n");
     return;
 }
-bool add(int key, string name, int threshold, int stock, float price)
+
+void updateTxt()
 {
     //TODO
-    return 0;
+}
+
+bool add(int key, string name, int threshold, int stock, float price)
+{
+    itemData item;
+    item.key = key;
+    item.name = malloc(sizeof(char)*strlen(name));
+    strcpy(item.name, name);
+    item.threshold = threshold;
+    item.stock = stock;
+    item.price = price;
+    load(item);
+    return 1;
 }
 
 bool deleteItem(int key)
@@ -120,26 +135,26 @@ void inventorySystem(int option)
         item.threshold = atoi(words[2]);
         item.stock = atoi(words[3]);
         item.price = atof(words[4]);
-        load(&item);//only loading last one
+        load(item);
     }
     //read and insert to a hash table we'll discuss
     int k, t, s;
     float p;
-    string n;
+    char n[20];
     switch(option)
     {
         case 1:
             printf("Key\t\t|\t");
             scanf("%i", &k);
             printf("Name\t\t|\t");
-            scanf("%s", &n);
+            scanf("%s", n);
             printf("Threshold\t|\t");
             scanf("%i", &t);
             printf("Stock\t\t|\t");
             scanf("%i", &s);
             printf("Price\t\t|\t");
             scanf("%f", &p);
-            search(1);
+
             if (add(k, n, t, s, p))
             {
                 printf("\nsuccess");
