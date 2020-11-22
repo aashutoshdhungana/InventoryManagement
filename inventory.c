@@ -2,28 +2,11 @@
 #include<stdlib.h>
 #include<stdbool.h>
 #include<string.h>
+#include "inventory.h"
 #define TABLESIZE 1000
+
 // Type defination for string data structure
 typedef char* string;
-
-// Item type defination
-typedef struct
-{
-    int key;
-    char name[20];
-    int threshold;
-    int stock;
-    float price;
-}
-itemData;
-
-// Node of Hash Table
-typedef struct node
-{
-    itemData *items;
-    struct node *next;
-}
-node;
 
 // HashTable declaration
 node *Table[TABLESIZE];
@@ -70,7 +53,7 @@ bool add(int key, string name, int threshold, int stock, float price)
     return 0;
 }
 
-bool deleteItem()
+bool deleteItem(int key)
 {
     //TODO
     return 0;
@@ -132,6 +115,7 @@ void inventorySystem(int option)
         }
         itemData item;
         item.key = atoi(words[0]);
+        item.name = malloc(sizeof(char)*strlen(words[1]));
         strcpy(item.name, words[1]);
         item.threshold = atoi(words[2]);
         item.stock = atoi(words[3]);
@@ -172,7 +156,7 @@ void inventorySystem(int option)
 
             //
 
-            if (deleteItem())
+            if (deleteItem(k))
             {
                 printf("\nSuccess!!!!");
             }
