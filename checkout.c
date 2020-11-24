@@ -37,10 +37,10 @@ typedef struct queue
 queue *rear = NULL, *front = NULL;
 
 // to enqueue the queue
-void enqueue(customer_detail *new_data);
+void enqueue(customer_detail new_data);
 
 // dequeue the queue
-customer_detail *dequeue(void);
+customer_detail dequeue(void);
 
 // calculate total for customer
 float total(customer_detail customer)
@@ -71,7 +71,7 @@ customer_detail make_customer(char[], float, int[], int);
 int main(void)
 {
     FILE *fptr = NULL;
-    char *customer = NULL;
+    // char *customer = NULL;
 
     // input a file to read the queue??
     // here test.txt is useed
@@ -146,20 +146,17 @@ int main(void)
         // fill in struct
         customer_detail customer = make_customer(name, cash, glist, gindex / 2);
 
-        printf("%s, %f, {", customer.name, customer.cash);
-        for (int i = 0; i < customer.no_of_items; i++)
-        {
-            for (int j = 0; j < 2; j++)
-            {
-                printf("%d, ", customer.grocery_list[i][j]);
-            }
-        }
-        printf("\b\b}\n\n");
+        // enqueue customer
+        enqueue(customer);
     }
+
+    // dequeue one item
+    customer_detail customer = dequeue();
+    printf("%s, %f, ", customer.name, customer.cash);
     //repeat until eof - O
     //read file line by line - O
-    //insert data into customer_detail struct - 0
-    //enqueue the data
+    //insert data into customer_detail struct - O
+    //enqueue the data - O
 
     //dequeue the data untill rear
     //calculate total
@@ -214,4 +211,58 @@ customer_detail make_customer(char name[], float cash, int grocery_list[], int n
     customer.no_of_items = nO_of_items_in_g_list;
 
     return customer;
+}
+
+void enqueue(customer_detail new_data)
+{
+    queue *new_node;
+    new_node = (queue *)malloc(sizeof(queue));
+    if (new_node == NULL)
+    {
+        printf("Memory Allocation failed!!\n");
+        exit(1);
+    }
+
+    if (rear == NULL)
+    {
+        new_node->data = new_data;
+        new_node->next = NULL;
+        front = rear = new_node;
+    }
+    else
+    {
+        new_node->data = new_data;
+        new_node->next = NULL;
+        rear->next = new_node;
+        rear = new_node;
+    }
+    // printf("%s, %f, {%d %d}\n", new_node->data.name, new_node->data.cash, new_node->data.grocery_list[0][0], new_node->data.grocery_list[0][1]);
+}
+
+customer_detail dequeue()
+{
+    queue *temp;
+    customer_detail customer_info;
+    if (front == NULL)
+    {
+        printf("Queue is empty! \n");
+        exit(1);
+    }
+    else if (front->next == NULL)
+    {
+        temp = front;
+        customer_info = temp->data;
+        front = rear = NULL;
+        free(temp);
+    }
+
+    else
+    {
+        temp = front;
+        customer_info = temp->data;
+        front = front->next;
+        free(temp);
+    }
+
+    return customer_info;
 }
