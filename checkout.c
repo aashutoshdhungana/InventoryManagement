@@ -4,48 +4,18 @@
 #include <stdbool.h>
 #include <ctype.h>
 
+#include "checkout.h"
+
 #define MAX_LINE_SIZE 200
-#define MAX_SIZE 100
-#define MAX_NAME_SIZE 50
 #define MAX_ITEM 200
-//grocery item for each customer
+
 #define print_c(c) printf("%c\n", c)
 #define print_int(i) printf("%d\n", i)
 #define print_f(f) printf("float = %f\n", f)
-typedef struct gItem
-{
-    int key;
-    int amount;
-} gItem;
 
-//Checkout
-typedef struct customer_detail
-{
-    char name[50];
-    float cash;
-    // int (*grocery_list)[2];
-    int grocery_list[MAX_SIZE][2];
-    int no_of_items;
-} customer_detail;
-
-typedef struct queue
-{
-    struct customer_detail data;
-    struct queue *next;
-} queue;
+int no_of_customers = 0;
 
 queue *rear = NULL, *front = NULL;
-
-// to enqueue the queue
-void enqueue(customer_detail new_data);
-
-// dequeue the queue
-customer_detail dequeue(void);
-
-// calculate total for customer
-float total(customer_detail customer)
-{
-}
 
 //print the log
 void print_log(customer_detail customer, bool has_enough_money)
@@ -68,7 +38,8 @@ void print_log(customer_detail customer, bool has_enough_money)
 long extract_int(char *);
 customer_detail make_customer(char[], float, int[], int);
 
-int main(void)
+// int checkout(char *filename)
+void main(void)
 {
     FILE *fptr = NULL;
     // char *customer = NULL;
@@ -148,11 +119,10 @@ int main(void)
 
         // enqueue customer
         enqueue(customer);
+        no_of_customers++;
     }
 
     // dequeue one item
-    customer_detail customer = dequeue();
-    printf("%s, %f, ", customer.name, customer.cash);
     //repeat until eof - O
     //read file line by line - O
     //insert data into customer_detail struct - O
@@ -170,7 +140,7 @@ int main(void)
     free(str);
     free(line);
     fclose(fptr);
-    return 0;
+    // return 0;
 }
 
 long extract_int(char *ptr)
@@ -199,6 +169,7 @@ customer_detail make_customer(char name[], float cash, int grocery_list[], int n
     customer_detail customer;
     strcpy(customer.name, name);
     customer.cash = cash;
+
     int k = 0;
     for (int i = 0; i < nO_of_items_in_g_list; i++)
     {
@@ -207,6 +178,7 @@ customer_detail make_customer(char name[], float cash, int grocery_list[], int n
             customer.grocery_list[i][j] = grocery_list[k++];
         }
     }
+
     customer.grocery_list[nO_of_items_in_g_list + 1][0] = -1;
     customer.no_of_items = nO_of_items_in_g_list;
 
@@ -216,6 +188,7 @@ customer_detail make_customer(char name[], float cash, int grocery_list[], int n
 void enqueue(customer_detail new_data)
 {
     queue *new_node;
+
     new_node = (queue *)malloc(sizeof(queue));
     if (new_node == NULL)
     {
@@ -243,6 +216,7 @@ customer_detail dequeue()
 {
     queue *temp;
     customer_detail customer_info;
+
     if (front == NULL)
     {
         printf("Queue is empty! \n");
@@ -255,7 +229,6 @@ customer_detail dequeue()
         front = rear = NULL;
         free(temp);
     }
-
     else
     {
         temp = front;
