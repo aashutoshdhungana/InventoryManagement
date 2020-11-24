@@ -3,13 +3,7 @@
 #include<stdbool.h>
 #include<string.h>
 #include "inventory.h"
-#define TABLESIZE 1000
-
-// Type defination for string data structure
-typedef char* string;
-
-// HashTable declaration
-node *Table[TABLESIZE];
+#include "helpers.c"
 
 //final build needs to have a better hash function this woks for now
 int hash(int key)
@@ -32,7 +26,7 @@ void load(itemData item)
     return;
 }
 
-void search (int key)
+bool search (int key)
 {
     int hashKey = hash(key);
     node *temp = malloc(sizeof(node));
@@ -41,13 +35,11 @@ void search (int key)
     {
         if (temp->items.key == key)
         {
-            printf("found\n");
-            return;
+            return 1;
         }
         temp = temp->next;
     }
-    printf("Not found\n");
-    return;
+    return 0;
 }
 
 void updateTxt()
@@ -57,6 +49,11 @@ void updateTxt()
 
 bool add(int key, string name, int threshold, int stock, float price)
 {
+    if (search(key))
+    {
+        printf("Key already exists\n");
+        return 0;
+    }
     itemData item;
     item.key = key;
     item.name = malloc(sizeof(char)*strlen(name));
@@ -70,13 +67,54 @@ bool add(int key, string name, int threshold, int stock, float price)
 
 bool deleteItem(int key)
 {
-    //TODO
+    if (search(key))
+    {
+        int hashkey = hash(key);
+        node *temp = Table[hashkey];
+        while (temp != NULL)
+        {
+            if (temp->items.key == key)
+            {
+                node *temp1 = temp->next;
+                while (temp1 != NULL)
+                {
+                    if (temp1->next == NULL)
+                    {
+                        temp1->next = Table[hashkey];
+                        break;
+                    }
+                    temp1 = temp1->next;
+                }
+                Table[hashkey] = temp->next;
+                free(temp);
+                break;
+            }
+            temp = temp->next;
+        }
+        return 1;
+    }
+    printf("key not found\n");
     return 0;
 }
 
-bool restock()
+bool restock(int key, int num)
 {
-    //TODO
+    if (search(key))
+    {
+        int hashkey = hash(key);
+        node *temp = Table[hashkey];
+        while (temp != NULL)
+        {
+            if (temp->items.key == key)
+            {
+                temp->items.stock += num;
+                return 1;
+            }
+            temp = temp->next;
+        }
+        return 1;
+    }
+    printf("Key not found\n");
     return 0;
 }
 
@@ -103,7 +141,7 @@ void inventorySystem(int option)
         char words[5][15];
         int j = 0;
         int k =0;
-        while (line[i] != '\n')
+        while (line[i] != '\n')// need to change parsing method
         {
             if (line[i] == '{' || line[i] == ' ' || line[i] == '"')
             {
@@ -140,24 +178,20 @@ void inventorySystem(int option)
     //read and insert to a hash table we'll discuss
     int k, t, s;
     float p;
-    char n[20];
+    string n =NULL;
     switch(option)
     {
         case 1:
-            printf("Key\t\t|\t");
-            scanf("%i", &k);
-            printf("Name\t\t|\t");
-            scanf("%s", n);
-            printf("Threshold\t|\t");
-            scanf("%i", &t);
-            printf("Stock\t\t|\t");
-            scanf("%i", &s);
-            printf("Price\t\t|\t");
-            scanf("%f", &p);
+            k = get_int("Enter the Key: ");
+            string temp = get_string("Enter the name of item: ");
+            n = realloc(temp, sizeof(char)*strlen(temp));
+            t = get_int("Enter threshold of item: ");
+            s = get_int("Enter stock of item: ");
+            p = get_float("Enter price of item: ");
 
             if (add(k, n, t, s, p))
             {
-                printf("\nsuccess");
+                printf("success\n");
             }
 
             else
@@ -167,13 +201,10 @@ void inventorySystem(int option)
             break;
 
         case 2:
-            //TODO check if key exist
-
-            //
-
+            k = get_int("Enter the key of item to be deleted: ");
             if (deleteItem(k))
             {
-                printf("\nSuccess!!!!");
+                printf("Success!!!!\n");
             }
 
             else
@@ -183,9 +214,11 @@ void inventorySystem(int option)
             break;
 
         case 3:
-            if (restock())
+            k = get_int("Enter key of item to restock: ");
+            int num = get_int("Enter the number of item to be added: ");
+            if (restock(k, num))
             {
-                printf("\nSuccess!!!!");
+                printf("Success!!!!!!\n");
             }
 
             else
