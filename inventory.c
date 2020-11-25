@@ -77,7 +77,7 @@ void load()
 bool search (int key)
 {
     int hashKey = hash(key);
-    node *temp = malloc(sizeof(node));
+    node *temp;
     temp = Table[hashKey];
     while (temp != NULL)
     {
@@ -90,6 +90,7 @@ bool search (int key)
     return 0;
 }
 
+// Updates the text file at the end of the program
 void updateTxt()
 {
     FILE * file = fopen("inventory.txt", "w");
@@ -106,6 +107,7 @@ void updateTxt()
     fclose(file);
 }
 
+// Adds into hash table
 bool add(int key, string name, int threshold, int stock, float price)
 {
     if (search(key))
@@ -147,7 +149,7 @@ bool add(int key, string name, int threshold, int stock, float price)
     return 1;
 }
 
-// Function to delete item from hash table
+// Deletes item from hash table
 bool deleteItem(int key)
 {
     if (search(key))
@@ -226,6 +228,7 @@ bool restockAll()
     return 1;
 }
 
+// Function frees all the memories
 void unload()
 {
     for(int i = 0; i < numofkeys; i++)
@@ -235,4 +238,5 @@ void unload()
             deleteItem(keys[i]);
         }
     }
+    free(keys);
 }
