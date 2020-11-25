@@ -14,7 +14,7 @@ typedef struct gItem
 //customer checkout detail
 typedef struct customer_detail
 {
-    char name[50];
+    char *name;
     float cash;
     // int (*grocery_list)[2];
     int grocery_list[MAX_SIZE][2];

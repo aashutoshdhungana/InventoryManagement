@@ -10,10 +10,14 @@
 #define MAX_ITEM 200
 
 #define print_c(c) printf("%c\n", c)
-#define print_int(i) printf("%d\n", i)
+#define print_int(msg, i) printf("%s %d\n", msg, i)
 #define print_f(f) printf("float = %f\n", f)
 
 int no_of_customers = 0;
+
+//pointer to reference memory as customer.name to be freed later
+char *ptr_to_free[MAX_ITEM];
+static int ptr_to_free_index = 0;
 
 queue *rear = NULL, *front = NULL;
 
@@ -37,10 +41,14 @@ void print_log(customer_detail customer, bool has_enough_money)
 // helper functions
 long extract_int(char *);
 customer_detail make_customer(char[], float, int[], int);
+void free_name_pointer_in_cd_struct();
 
 // int checkout(char *filename)
-void main(void)
+int main(void)
 {
+    // inventorySystem(9);
+    printf("Loaded hash table.\n");
+
     FILE *fptr = NULL;
     // char *customer = NULL;
 
@@ -68,20 +76,13 @@ void main(void)
     float cash;
     long num;
 
-    str = (char *)calloc(MAX_LINE_SIZE, sizeof(char));
-    if (str = NULL)
-    {
-        printf("Memory allocation for line failed!!\n");
-        exit(1);
-    }
-
     while (fgets(line, MAX_LINE_SIZE, fptr))
     {
         int glist[MAX_ITEM], gindex = 0;
         for (j = 1, str = line;; j++, str = NULL)
         {
             /* line format eg: {"Karen", 8.00, [{102, 3}, {216, 1}]}
-             * separate substrings with "," as delimeter 
+             * separate substrings with "," as delimeter
              */
             token = strtok(str, ",");
 
@@ -121,6 +122,20 @@ void main(void)
         enqueue(customer);
         no_of_customers++;
     }
+    free(line);
+    free(str);
+
+    /* call function at exit to free memory
+     *`allocated to customer.name
+     */
+    atexit(free_name_pointer_in_cd_struct);
+
+    customer_detail customer;
+    for (int i = 0; i < no_of_customers; i++)
+    {
+        customer = dequeue();
+        printf("Dequeued customer is %s\n", customer.name);
+    }
 
     // dequeue one item
     //repeat until eof - O
@@ -137,12 +152,11 @@ void main(void)
     //check for if restock required
     //inventory message
 
-    free(str);
-    free(line);
     fclose(fptr);
-    // return 0;
+    return 0;
 }
 
+//extract integer from mixed string
 long extract_int(char *ptr)
 {
     long val = 0;
@@ -164,12 +178,33 @@ long extract_int(char *ptr)
     return val;
 }
 
+// make variable of customer_detail struct
 customer_detail make_customer(char name[], float cash, int grocery_list[], int nO_of_items_in_g_list)
 {
     customer_detail customer;
+
+    int n = strlen(name) + 1; // +1 for '\0'
+
+    // allocate memory for customer.name
+    customer.name = malloc(n * sizeof(char));
+    if (customer.name == NULL)
+    {
+        printf("Memory allocation failed!");
+        exit(1);
+    }
+
+    //copy value of name to memory allocated
     strcpy(customer.name, name);
+
+    //make a pointer to reference to the allocated memory
+    //so that at the end of the program we could free it
+    ptr_to_free[ptr_to_free_index++] = customer.name;
+
     customer.cash = cash;
 
+    /* store grocery list in two dimentional array
+     * glist[no_of_items][2]
+     */
     int k = 0;
     for (int i = 0; i < nO_of_items_in_g_list; i++)
     {
@@ -179,12 +214,23 @@ customer_detail make_customer(char name[], float cash, int grocery_list[], int n
         }
     }
 
-    customer.grocery_list[nO_of_items_in_g_list + 1][0] = -1;
     customer.no_of_items = nO_of_items_in_g_list;
 
     return customer;
 }
 
+// function to free all the allocated memory to customer.name
+void free_name_pointer_in_cd_struct()
+{
+
+    for (int i = 0; i < no_of_customers; i++)
+    {
+        free(ptr_to_free[i]);
+        ptr_to_free[i] = NULL;
+    }
+}
+
+// enqueue customer detail
 void enqueue(customer_detail new_data)
 {
     queue *new_node;
@@ -212,6 +258,7 @@ void enqueue(customer_detail new_data)
     // printf("%s, %f, {%d %d}\n", new_node->data.name, new_node->data.cash, new_node->data.grocery_list[0][0], new_node->data.grocery_list[0][1]);
 }
 
+// dequeue customer detail
 customer_detail dequeue()
 {
     queue *temp;
