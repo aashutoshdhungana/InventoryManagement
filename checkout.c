@@ -58,7 +58,6 @@ int main(void)
     load_hash_table();
 
     char *filename = "test.txt";
-    printf("Loaded hash table.\n");
 
     FILE *fptr = NULL;
     // char *customer = NULL;
@@ -143,7 +142,6 @@ int main(void)
 
     customer_detail customer;
 
-    printf("\n\n\nRECEITP\n:");
     for (int i = 0; i < no_of_customers; i++)
     {
         customer = dequeue();
@@ -170,13 +168,13 @@ int main(void)
     //insert data into customer_detail struct - O
     //enqueue the data - O
 
-    //dequeue the data untill rear
-    //calculate total
-    //total < cash :
-    //print_log
-    //total >= cash
-    //deduct from inventory
-    //check for if restock required
+    //dequeue the data untill rear |
+    //calculate total               |
+    //total < cash :                |
+    //print_log                     |  -o
+    //total >= cash                 |
+    //deduct from inventory         |
+    //check for if restock required ->
     //inventory message
 
     fclose(fptr);
@@ -317,7 +315,6 @@ void make_receipt(customer_detail customer, gItem *list, char *filename)
         list = beginning;
         for (int i = 0; i < customer.no_of_items; i++)
         {
-            printf("*%d\n", list->key);
             change = list->amount;
             restock(list->key, change);
             list++;
@@ -327,18 +324,6 @@ void make_receipt(customer_detail customer, gItem *list, char *filename)
 
     fprintf(fptr, "-------------------------------------------------------\n\n");
 
-    /* format :
-        Customer - Karen
-
-        Apples x3 @ $0.99
-        Swiss Cheese x1 @ $2.49
-
-        Total: $6.48
-        Thank you, come back soon!
-        (Customer did not have enough money and was REJECTED
-        Thank you, come back soon!)-> if has_enough_money = FALSE;
-        -------------------------------------------------------
-    */
     free(basename);
     fclose(fptr);
 }
