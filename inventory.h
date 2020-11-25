@@ -29,7 +29,7 @@ node *Table[TABLESIZE];
 
 //hash table functions
 int hash(int key);
-void load(itemData item);
+void load();
 bool search (int key);
 void unload();
 void updateTxt();

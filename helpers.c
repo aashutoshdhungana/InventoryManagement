@@ -49,7 +49,7 @@ string get_string(string msg)
     string s = realloc(buffer, size + 1);
     s[pos] = '\0';
     
-    string *temp = realloc(strings, sizeof(string) * allocations);
+    string *temp = realloc(strings, sizeof(string) * (allocations + 1));
     strings = temp;
     strings[allocations] = s;
     allocations++;

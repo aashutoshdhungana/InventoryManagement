@@ -5,24 +5,72 @@
 #include "inventory.h"
 #include "helpers.c"
 
+#define MAX_WORD 45
+#define MAX_LINE 45*5
+
+// Dynamic list of keys to store all the keys in inventory
+int *keys = NULL;
+int numofkeys = 0;
+
 //final build needs to have a better hash function this woks for now
 int hash(int key)
 {
     return key%1000;
 }
 
-void load(itemData item)
+// Function to load the hash table
+void load()
 {
-    int hashKey = hash(item.key);
-    node *n = malloc(sizeof(node));
-    if (n == NULL)
+    // Opening file
+    FILE *file = fopen("inventory.txt", "r");
+    if (file == NULL)
     {
-        printf("Mem Error!!!");
+        printf("Inventory.txt couldnot be opened!!!!!\n");
         exit(1);
     }
-    n->items = item;
-    n->next =  Table[hashKey];
-    Table[hashKey] = n;
+
+    // Reading from file then parsing the read data
+    char line[MAX_LINE];
+    while (fgets(line, sizeof(line), file))
+    {
+        int i = 0;
+        int j = 0;
+        int k = 0;
+        char words[4][MAX_WORD];
+        while (line[i] != '\0')
+        {
+            if (line[i] == ',')
+            {
+                words[j][k] = '\0';
+                j++;
+                i = i + 2;
+                k = 0;
+            }
+
+            else if (line[i] == '"' || line[i] == '{')
+            {
+                i++;
+            }
+
+            else if (line[i] == '}')
+            {
+                words[j][k] = '\0';
+                break;
+            }
+            else
+            {
+                words[j][k] = line[i];
+                k++;
+                i++;
+            }
+        }
+        if(!add(atoi(words[0]), words[1], atoi(words[2]), atoi(words[3]), atof(words[4])))
+        {
+            printf("Loading failed!!\n");
+            exit(-1);
+        }
+    }
+    fclose(file);
     return;
 }
 
@@ -44,7 +92,18 @@ bool search (int key)
 
 void updateTxt()
 {
-    //TODO
+    FILE * file = fopen("inventory.txt", "w");
+    for (int i = 0; i < numofkeys; i++)
+    {
+        int hashkey = hash(keys[i]);
+        node *n = Table[hashkey];
+        while( n != NULL)
+        {
+            fprintf(file, "{%.3i, \"%s\", %i, %i, %.2f}\n", n->items.key, n->items.name, n->items.threshold, n->items.stock, n->items.price);
+            n = n->next;
+        }
+    }
+    fclose(file);
 }
 
 bool add(int key, string name, int threshold, int stock, float price)
@@ -54,17 +113,41 @@ bool add(int key, string name, int threshold, int stock, float price)
         printf("Key already exists\n");
         return 0;
     }
+
+    // Data assigned to item;
     itemData item;
     item.key = key;
-    item.name = malloc(sizeof(char)*strlen(name));
+    item.name = malloc(sizeof(char) * (strlen(name) + 1));
+    if (item.name == NULL)
+    {
+        printf("Memory Allocation Failed\n");
+    }
     strcpy(item.name, name);
     item.threshold = threshold;
     item.stock = stock;
     item.price = price;
-    load(item);
+
+    // Adding item to hash table
+    int hashkey = hash(item.key);
+    node *n = malloc(sizeof(node));
+    if (n == NULL)
+    {
+        printf("Memory Allocation Failed!!\n");
+        return 0;
+    }
+    n->items = item;
+    n->next = Table[hashkey];
+    Table[hashkey] = n;
+
+    // Add keys in list
+    int *temp = realloc(keys, sizeof(int)*(numofkeys + 1));
+    keys = temp;
+    keys[numofkeys] = item.key;
+    numofkeys ++;
     return 1;
 }
 
+// Function to delete item from hash table
 bool deleteItem(int key)
 {
     if (search(key))
@@ -75,6 +158,7 @@ bool deleteItem(int key)
         {
             if (temp->items.key == key)
             {
+                free(temp->items.name);
                 node *temp1 = temp->next;
                 while (temp1 != NULL)
                 {
@@ -97,6 +181,7 @@ bool deleteItem(int key)
     return 0;
 }
 
+// Function to restock the 'key' item by adding 'num' amount
 bool restock(int key, int num)
 {
     if (search(key))
@@ -118,131 +203,36 @@ bool restock(int key, int num)
     return 0;
 }
 
-bool restockAll()
+// Restocks all the items to threshold value
+bool restockAll() 
 {
-    //TODO
-    return 0;
+    for (int i = 0; i < numofkeys; i++)
+    {
+        int hashkey = hash(keys[i]);
+        node *n = Table[hashkey];
+
+        while (n != NULL)
+        {
+            if (n->items.key == keys[i])
+            {
+                if (n->items.stock < n->items.threshold)
+                {
+                    n->items.stock = n->items.threshold;
+                }
+            }
+            n = n->next;
+        }
+    }
+    return 1;
 }
 
-void inventorySystem(int option)
+void unload()
 {
-    // Opening file
-    FILE *file = fopen("inventory.txt", "r");
-    if (file == NULL)
+    for(int i = 0; i < numofkeys; i++)
     {
-        printf("Inventory.txt couldnot be opened!!!!!\n");
-        exit(1);
-    }
-
-    char line[100];
-    while (fgets(line, sizeof(line), file))
-    {
-        int i = 0;
-        char words[5][15];
-        int j = 0;
-        int k =0;
-        while (line[i] != '\n')// need to change parsing method
+        if (search(keys[i]))
         {
-            if (line[i] == '{' || line[i] == ' ' || line[i] == '"')
-            {
-            }
-
-            else if (line[i] == '}')
-            {
-                words[j][k] = '\0';
-            }
-
-            else if (line[i] == ',')
-            {
-                words[j][k] = '\0';
-                k = 0;
-                j++;
-            }
-
-            else
-            {
-                words[j][k] = line[i];
-                k++;
-            }
-            i++;
+            deleteItem(keys[i]);
         }
-        itemData item;
-        item.key = atoi(words[0]);
-        item.name = malloc(sizeof(char)*strlen(words[1]));
-        strcpy(item.name, words[1]);
-        item.threshold = atoi(words[2]);
-        item.stock = atoi(words[3]);
-        item.price = atof(words[4]);
-        load(item);
     }
-    //read and insert to a hash table we'll discuss
-    int k, t, s;
-    float p;
-    string n =NULL;
-    switch(option)
-    {
-        case 1:
-            k = get_int("Enter the Key: ");
-            string temp = get_string("Enter the name of item: ");
-            n = realloc(temp, sizeof(char)*strlen(temp));
-            t = get_int("Enter threshold of item: ");
-            s = get_int("Enter stock of item: ");
-            p = get_float("Enter price of item: ");
-
-            if (add(k, n, t, s, p))
-            {
-                printf("success\n");
-            }
-
-            else
-            {
-                printf("\nError!!!!");
-            }
-            break;
-
-        case 2:
-            k = get_int("Enter the key of item to be deleted: ");
-            if (deleteItem(k))
-            {
-                printf("Success!!!!\n");
-            }
-
-            else
-            {
-                printf("\nError!!!!");
-            }
-            break;
-
-        case 3:
-            k = get_int("Enter key of item to restock: ");
-            int num = get_int("Enter the number of item to be added: ");
-            if (restock(k, num))
-            {
-                printf("Success!!!!!!\n");
-            }
-
-            else
-            {
-                printf("\nError!!!!");
-            }
-            break;
-
-        case 4:
-            if (restockAll())
-            {
-                printf("\nSuccess!!!!");
-            }
-
-            else
-            {
-                printf("\nError!!!!");
-            }
-            break;
-
-        default:
-            printf("Enter valid option");
-            break;
-    }
-    fclose(file);
-    return;
 }
