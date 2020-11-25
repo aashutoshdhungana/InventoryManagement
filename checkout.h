@@ -9,6 +9,10 @@ typedef struct gItem
 {
     int key;
     int amount;
+    int threshold;
+    int stock;
+    float price;
+    char name[50];
 } gItem;
 
 //customer checkout detail
@@ -29,7 +33,7 @@ float total(customer_detail customer);
 // queue implementation
 typedef struct queue
 {
-    struct customer_detail data;
+    customer_detail data;
     struct queue *next;
 } queue;
 
