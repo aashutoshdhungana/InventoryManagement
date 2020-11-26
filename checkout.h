@@ -9,10 +9,6 @@ typedef struct gItem
 {
     int key;
     int amount;
-    int threshold;
-    int stock;
-    float price;
-    char name[50];
 } gItem;
 
 //customer checkout detail
@@ -20,8 +16,7 @@ typedef struct customer_detail
 {
     char *name;
     float cash;
-    // int (*grocery_list)[2];
-    int grocery_list[MAX_SIZE][2];
+    gItem grocery_list[MAX_SIZE];
     int no_of_items;
 } customer_detail;
 

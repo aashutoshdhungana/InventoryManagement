@@ -24,7 +24,7 @@ static int ptr_to_free_index = 0;
 
 queue *rear = NULL, *front = NULL;
 
-void write_receipt(customer_detail customer, gItem *list, FILE *fptr);
+void write_receipt(customer_detail customer, FILE *fptr);
 void make_receipt(char *filename);
 void print_warning();
 
@@ -168,40 +168,15 @@ customer_detail make_customer(char name[], float cash, int grocery_list[], int n
 
     customer.cash = cash;
 
-    /* store grocery list in two dimentional array
-     * glist[no_of_items][2]
-     */
-    int k = 0;
-    for (int i = 0; i < nO_of_items_in_g_list; i++)
+    for (int i = 0, k = 0; i < nO_of_items_in_g_list; i++, k += 2)
     {
-        for (int j = 0; j < 2; j++)
-        {
-            customer.grocery_list[i][j] = grocery_list[k++];
-        }
+        customer.grocery_list[i].key = grocery_list[k];
+        customer.grocery_list[i].amount = grocery_list[k + 1];
     }
 
     customer.no_of_items = nO_of_items_in_g_list;
 
     return customer;
-}
-
-gItem get_item_with_amount(int key)
-{
-    int hashKey = hash(key);
-    gItem item;
-    node *temp;
-    temp = Table[hashKey];
-    while (temp->items.key != key)
-    {
-        printf("%d %d", temp->items.key, key);
-        temp = temp->next;
-    }
-    item.key = key;
-    item.price = temp->items.price;
-    item.stock = temp->items.stock;
-    item.threshold = temp->items.threshold;
-    strcpy(item.name, temp->items.name);
-    return item;
 }
 
 void make_receipt(char *filename)
@@ -228,19 +203,7 @@ void make_receipt(char *filename)
         customer = dequeue();
         // printf("Dequeued customer is %s\n", customer.name);
 
-        gItem items[customer.no_of_items];
-
-        for (int j = 0; j < customer.no_of_items; j++)
-        {
-            // printf("grocery key = %d\n", customer.grocery_list[j][0]);
-            if (search(customer.grocery_list[j][0]))
-            {
-                items[j] = get_item_with_amount(customer.grocery_list[j][0]);
-                items[j].amount = customer.grocery_list[j][1];
-            }
-        }
-
-        write_receipt(customer, items, fptr);
+        write_receipt(customer, fptr);
     }
 
     fclose(fptr);
@@ -250,30 +213,33 @@ void make_receipt(char *filename)
     return;
 }
 
-void write_receipt(customer_detail customer, gItem *list, FILE *fptr)
+void write_receipt(customer_detail customer, FILE *fptr)
 {
-    gItem *beginning = list;
 
     float total = 0, item_total = 0;
     int change;
 
     fprintf(fptr, "Customer - %s\n\n", customer.name);
     // printf("Customer - %s\n\n", customer.name);
+    itemData itemDetail;
+
+    gItem *gList, *beginning;
+    beginning = customer.grocery_list;
+    gList = beginning;
 
     for (int i = 0; i < customer.no_of_items; i++)
     {
-        change = -1 * list->amount;
+        itemDetail = query(gList->key);
+        change = -1 * gList->amount;
         // printf("change = %d\n", change);
         // printf("beforestock = %d\n", list->stock);
-        restock(list->key, change);
-        list->stock = list->stock + change;
+        restock(gList->key, change);
         // printf("afterstock = %d\n", list->stock);
-        item_total = list->amount * list->price;
-        fprintf(fptr, "%s X%d @ $%.2f\n", list->name, list->amount, list->price);
+        item_total = gList->amount * itemDetail.price;
+        fprintf(fptr, "%s X%d @ $%.2f\n", itemDetail.name, gList->amount, itemDetail.price);
         //checkfor stock threshhold
-        // printf("**%s :  %d < %d\n", list->name, list->stock, list->threshold);
         total += item_total;
-        list++;
+        gList++;
     }
 
     fprintf(fptr, "\nTotal: $%.2f\n\n", total);
@@ -283,13 +249,12 @@ void write_receipt(customer_detail customer, gItem *list, FILE *fptr)
     }
     else
     {
-        list = beginning;
+        gList = beginning;
         for (int i = 0; i < customer.no_of_items; i++)
         {
-            change = list->amount;
-            restock(list->key, change);
-            list->stock = list->stock + change;
-            list++;
+            change = gList->amount;
+            restock(gList->key, change);
+            gList++;
         }
         fprintf(fptr, "Customer did not have enough money and was REJECTED\nThank you, come back soon!\n");
     }
@@ -297,21 +262,23 @@ void write_receipt(customer_detail customer, gItem *list, FILE *fptr)
     fprintf(fptr, "-------------------------------------------------------\n\n");
 
     //find items for inventory warning
-    list = beginning;
+    gList = beginning;
     for (int i = 0; i < customer.no_of_items; i++)
     {
-        if (list->stock < list->threshold)
+        itemDetail = query(gList->key);
+        if (itemDetail.stock < itemDetail.threshold)
         {
-            insert(list->key);
+            insert(gList->key);
             // printf("\n\nInserted Item  = %d \n", list->key);
         }
-        list++;
+        gList++;
     }
 }
 
 void print_warning()
 {
     int restock_item, count;
+    itemData item;
     count = data_count();
     if (count != 0)
     {
@@ -320,8 +287,7 @@ void print_warning()
     for (int k = 0; k < count; k++)
     {
         restock_item = get_data(k);
-        gItem item;
-        item = get_item_with_amount(restock_item);
+        item = query(restock_item);
         printf("%d (%s): %d remain in stock, replenishment threshold is %d\n", item.key, item.name, item.stock, item.threshold);
     }
     deleteall();
