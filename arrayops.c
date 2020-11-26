@@ -4,8 +4,6 @@
 
 #include "arrayops.h"
 
-node_array *head = NULL;
-
 bool insert(int data)
 {
     if (search_data(data))

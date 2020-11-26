@@ -10,6 +10,8 @@ typedef struct node_array
     struct node_array *next;
 } node_array;
 
+node_array *head = NULL;
+
 bool insert(int data);
 bool remove_data(int data);
 bool search_data(int data);
