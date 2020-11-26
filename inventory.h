@@ -5,8 +5,7 @@
 #include<stdbool.h>
 #define TABLESIZE 1000
 
-//might define string type later
-
+// Typedef for item
 typedef struct
 {
     int key;
@@ -17,6 +16,7 @@ typedef struct
 }
 itemData;
 
+// Typedef for nodes of hashtable
 typedef struct node
 {
     itemData items;
@@ -31,6 +31,7 @@ node *Table[TABLESIZE];
 int hash(int key);
 void load();
 bool search (int key);
+itemData query(int key);
 void unload();
 void updateTxt();
 

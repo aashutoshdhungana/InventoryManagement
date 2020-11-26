@@ -90,6 +90,23 @@ bool search (int key)
     return 0;
 }
 
+// Returns the item with the given key
+itemData query(int key)
+{
+    int hashkey = hash(key);
+    node *n = Table[hashkey];
+    while(n != NULL)
+    {
+        if (n->items.key == key)
+        {
+            return n->items;
+        }
+        n = n->next;
+    }
+    itemData item = { .key = -122, .name = "Error", .threshold = 0, .stock = 0, .price = 0};
+    printf("Item with given key '%.3i' not found\n", key);
+    return item;
+}
 // Updates the text file at the end of the program
 void updateTxt()
 {
