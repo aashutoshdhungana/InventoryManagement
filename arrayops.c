@@ -4,7 +4,7 @@
 
 #include "arrayops.h"
 
-node *head = NULL;
+node_array *head = NULL;
 
 bool insert(int data)
 {
@@ -13,8 +13,8 @@ bool insert(int data)
         // printf("Item already there!\n");
         return false;
     }
-    node *nnode;
-    nnode = (node *)malloc(sizeof(node));
+    node_array *nnode;
+    nnode = (node_array *)malloc(sizeof(node_array));
     if (nnode == NULL)
     {
         printf("Memory allocation failed!!\n");
@@ -28,7 +28,7 @@ bool insert(int data)
 
 bool remove_data(int data)
 {
-    node *temp, *freenode;
+    node_array *temp, *freenode;
     temp = head;
     if (temp == NULL)
     {
@@ -62,7 +62,7 @@ bool remove_data(int data)
 
 bool search_data(int data)
 {
-    node *temp;
+    node_array *temp;
     temp = head;
     while (temp != NULL)
     {
@@ -77,7 +77,7 @@ bool search_data(int data)
 
 void deleteall()
 {
-    node *temp;
+    node_array *temp;
     temp = head;
     while (head != NULL)
     {
@@ -89,7 +89,7 @@ void deleteall()
 
 int data_count()
 {
-    node *temp;
+    node_array *temp;
     int count = 0;
     temp = head;
     while (temp != NULL)
@@ -103,7 +103,7 @@ int data_count()
 
 int get_data(int position)
 {
-    node *temp;
+    node_array *temp;
     temp = head;
     if (position >= data_count() || position < 0)
     {
