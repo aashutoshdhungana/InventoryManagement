@@ -5,6 +5,13 @@
 #include<stdbool.h>
 #define TABLESIZE 1000
 
+#define MAX_WORD 45
+#define MAX_LINE 45*5
+
+// Dynamic list of keys to store all the keys in inventory
+int *keys = NULL;
+int numofkeys = 0;
+
 // Typedef for item
 typedef struct
 {

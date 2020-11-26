@@ -5,13 +5,6 @@
 #include "inventory.h"
 #include "helpers.c"
 
-#define MAX_WORD 45
-#define MAX_LINE 45*5
-
-// Dynamic list of keys to store all the keys in inventory
-int *keys = NULL;
-int numofkeys = 0;
-
 //final build needs to have a better hash function this woks for now
 int hash(int key)
 {
