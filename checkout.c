@@ -10,8 +10,6 @@
 #include "checkout.h"
 #include "inventory.h"
 #include "inventory.c"
-#include "arrayops.h"
-#include "arrayops.c"
 
 #define MAX_LINE_SIZE 200
 #define MAX_ITEM 200
@@ -24,6 +22,9 @@ static int ptr_to_free_index = 0;
 
 //flag for restock
 bool restock_alarm = false;
+
+int *restock_list = NULL;
+static int restock_count = 0;
 
 queue *rear = NULL, *front = NULL;
 
@@ -46,10 +47,14 @@ customer_detail make_customer(char[], float, int[], int);
 void free_name_pointer_in_cd_struct();
 gItem get_item_with_amount(int key);
 
+//check id item is already in restock_list
+bool is_in_restock_list(int key);
+
 //checkout register file
 int checkout(char *filename)
 {
     FILE *fptr = NULL;
+    restock_list = (int *)malloc(sizeof(int));
 
     //open file
     fptr = fopen(filename, "r");
@@ -137,6 +142,7 @@ int checkout(char *filename)
     //print the inventory warning if necessary
     print_warning();
 
+    free(restock_list);
     fclose(fptr);
     return 0;
 }
@@ -293,10 +299,20 @@ void write_receipt(customer_detail customer, FILE *fptr)
     for (int i = 0; i < customer.no_of_items; i++)
     {
         itemDetail = query(gList->key);
-        if (itemDetail.stock < itemDetail.threshold)
+        if ((itemDetail.stock < itemDetail.threshold) && !is_in_restock_list(gList->key))
         {
+            restock_count++;
+            int size = sizeof(int) * (restock_count + 1);
+
+            int *temp = realloc(restock_list, size);
+            if (temp == NULL)
+            {
+                printf("Memory cannot be re allocated!");
+            }
+
+            restock_list[restock_count - 1] = gList->key;
+
             restock_alarm = true;
-            insert(gList->key);
         }
         gList++;
     }
@@ -307,21 +323,30 @@ void print_warning()
     int restock_item, count;
     itemData item_detail;
 
-    //get count of items needing restocking
-    count = data_count();
-
-    if (count != 0)
+    if (restock_count)
     {
         printf("\nWarning! The following Item(s) may need to be restocked:\n");
     }
-    for (int k = 0; k < count; k++)
+
+    for (int k = 0; k < restock_count; k++)
     {
-        restock_item = get_data(k);
+        int restock_item = restock_list[k];
         item_detail = query(restock_item);
         printf("%d (%s): %d remain in stock, replenishment threshold is %d\n", item_detail.key, item_detail.name, item_detail.stock, item_detail.threshold);
     }
+}
 
-    deleteall();
+//find id item is already in restock_list
+bool is_in_restock_list(int key)
+{
+    for (int i = 0; i < restock_count; i++)
+    {
+        if (restock_list[i] == key)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 // function to free all the allocated memory to customer.name
