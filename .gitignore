@@ -3,4 +3,9 @@
 
 //executable files
 *.exe
+
+//object files
 *.o
+
+//text files
+test_receipt.txt
