@@ -1,3 +1,6 @@
+#ifndef CHECKOUT_C
+#define CHECKOUT_C
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -5,8 +8,8 @@
 #include <ctype.h>
 
 #include "checkout.h"
-//  #include "inventory.h"
-// #include "inventory.c"
+#include "inventory.h"
+#include "inventory.c"
 #include "arrayops.h"
 #include "arrayops.c"
 
@@ -391,3 +394,5 @@ customer_detail dequeue()
 
     return customer_info;
 }
+
+#endif

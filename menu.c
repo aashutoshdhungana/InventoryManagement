@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "inventory.c"
-#include "inventory.h"
 #include "checkout.c"
 #include "helpers.c"
 

@@ -1,14 +1,21 @@
+#ifndef INVENTORY_C
+#define INVENTORY_C
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<stdbool.h>
 #include<string.h>
+#include<math.h>
+
 #include "inventory.h"
 #include "helpers.c"
 
 //final build needs to have a better hash function this woks for now
 int hash(int key)
 {
-    return key%1000;
+    const float A = 0.61803398875;
+    int hashkey = floor(TABLESIZE * (key * A - floor(key * A)));
+    return hashkey;
 }
 
 // Function to load the hash table
@@ -19,6 +26,7 @@ void load()
     if (file == NULL)
     {
         printf("Inventory.txt couldnot be opened!!!!!\n");
+        fclose(file);
         exit(1);
     }
 
@@ -26,41 +34,44 @@ void load()
     char line[MAX_LINE];
     while (fgets(line, sizeof(line), file))
     {
-        int i = 0;
-        int j = 0;
-        int k = 0;
-        char words[4][MAX_WORD];
-        while (line[i] != '\0')
+        if (line[0] != '\n')
         {
-            if (line[i] == ',')
+            int i = 0;
+            int j = 0;
+            int k = 0;
+            char words[4][MAX_WORD];
+            while (line[i] != '\0')
             {
-                words[j][k] = '\0';
-                j++;
-                i = i + 2;
-                k = 0;
-            }
+                if (line[i] == ',')
+                {
+                    words[j][k] = '\0';
+                    j++;
+                    i = i + 2;
+                    k = 0;
+                }
 
-            else if (line[i] == '"' || line[i] == '{')
-            {
-                i++;
-            }
+                else if (line[i] == '"' || line[i] == '{')
+                {
+                    i++;
+                }
 
-            else if (line[i] == '}')
-            {
-                words[j][k] = '\0';
-                break;
+                else if (line[i] == '}')
+                {
+                    words[j][k] = '\0';
+                    break;
+                }
+                else
+                {
+                    words[j][k] = line[i];
+                    k++;
+                    i++;
+                }
             }
-            else
+            if (!add(atoi(words[0]), words[1], atoi(words[2]), atoi(words[3]), atof(words[4])))
             {
-                words[j][k] = line[i];
-                k++;
-                i++;
+                printf("Loading failed!!\n");
+                exit(-1);
             }
-        }
-        if(!add(atoi(words[0]), words[1], atoi(words[2]), atoi(words[3]), atof(words[4])))
-        {
-            printf("Loading failed!!\n");
-            exit(-1);
         }
     }
     fclose(file);
@@ -250,3 +261,5 @@ void unload()
     }
     free(keys);
 }
+
+#endif
