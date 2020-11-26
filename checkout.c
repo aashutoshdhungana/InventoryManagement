@@ -7,13 +7,11 @@
 #include "checkout.h"
 #include "inventory.h"
 #include "inventory.c"
+#include "arrayops.h"
+#include "arrayops.c"
 
 #define MAX_LINE_SIZE 200
 #define MAX_ITEM 200
-
-#define print_c(c) printf("%c\n", c)
-#define print_int(msg, i) printf("%s %d\n", msg, i)
-#define print_f(f) printf("float = %f\n", f)
 
 int no_of_customers = 0;
 int restok_item[MAX_SIZE];
@@ -23,24 +21,9 @@ static int ptr_to_free_index = 0;
 
 queue *rear = NULL, *front = NULL;
 
-void make_receipt(customer_detail customer, gItem list[], char *filename);
-
-//print the log
-void print_log(customer_detail customer, bool has_enough_money)
-{
-    /* format :
-        Customer - Karen
-
-        Apples x3 @ $0.99
-        Swiss Cheese x1 @ $2.49
-
-        Total: $6.48
-        Thank you, come back soon!
-        (Customer did not have enough money and was REJECTED
-        Thank you, come back soon!)-> if has_enough_money = FALSE;
-        -------------------------------------------------------
-    */
-}
+void write_receipt(customer_detail customer, gItem *list, FILE *fptr);
+void make_receipt(char *filename);
+void print_warning();
 
 // helper functions
 long extract_int(char *);
@@ -55,15 +38,13 @@ int main(void)
     //to a load_hash_table()
     //later this wont be needing here as hash table would be loaded
     //in menu.c
-    load_hash_table();
+    load();
 
     char *filename = "test.txt";
 
     FILE *fptr = NULL;
-    // char *customer = NULL;
 
-    // input a file to read the queue??
-    // here test.txt is useed
+    //open file
     fptr = fopen(filename, "r");
 
     if (fptr == NULL)
@@ -140,42 +121,14 @@ int main(void)
      */
     atexit(free_name_pointer_in_cd_struct);
 
-    customer_detail customer;
+    make_receipt(filename);
 
-    for (int i = 0; i < no_of_customers; i++)
-    {
-        customer = dequeue();
-        // printf("Dequeued customer is %s\n", customer.name);
-
-        gItem items[customer.no_of_items];
-
-        for (int j = 0; j < customer.no_of_items; j++)
-        {
-            // printf("grocery key = %d\n", customer.grocery_list[j][0]);
-            if (search(customer.grocery_list[j][0]))
-            {
-                items[j] = get_item_with_amount(customer.grocery_list[j][0]);
-                items[j].amount = customer.grocery_list[j][1];
-            }
-        }
-
-        make_receipt(customer, items, filename);
-    }
-
-    // dequeue one item
-    //repeat until eof - O
-    //read file line by line - O
-    //insert data into customer_detail struct - O
-    //enqueue the data - O
-
-    //dequeue the data untill rear |
-    //calculate total               |
-    //total < cash :                |
-    //print_log                     |  -o
-    //total >= cash                 |
-    //deduct from inventory         |
-    //check for if restock required ->
-    //inventory message
+    /*
+    Warning! The following Item(s) may need to be restocked:
+102 (Apples): 8 remain in stock, replenishment threshold is 10
+039 (Wine): 9 remain in stock, replenishment threshold is 15
+    */
+    print_warning();
 
     fclose(fptr);
     return 0;
@@ -263,44 +216,74 @@ gItem get_item_with_amount(int key)
     return item;
 }
 
-void make_receipt(customer_detail customer, gItem *list, char *filename)
+void make_receipt(char *filename)
 {
-    gItem *beginning = list;
+    // printf("%s", filename);
+    customer_detail customer;
 
-    static bool fileWriteStart = false;
-    //make a variable to store receipt file name
     char *filename_cpy = malloc((strlen(filename)) * sizeof(char));
     strcpy(filename_cpy, filename);
     char *basename = strtok(filename_cpy, ".");
     strcat(basename, "_receipt.txt");
 
     FILE *fptr;
-
-    //open reciept file
-    if (!fileWriteStart)
-    {
-        fptr = fopen(basename, "w");
-        fileWriteStart = true;
-    }
-    else
-        fptr = fopen(basename, "a");
-
     if (fptr == NULL)
     {
         printf("Error opening file!\n");
         exit(1);
     }
 
+    fptr = fopen(basename, "w");
+    for (int i = 0; i < no_of_customers; i++)
+    {
+
+        customer = dequeue();
+        // printf("Dequeued customer is %s\n", customer.name);
+
+        gItem items[customer.no_of_items];
+
+        for (int j = 0; j < customer.no_of_items; j++)
+        {
+            // printf("grocery key = %d\n", customer.grocery_list[j][0]);
+            if (search(customer.grocery_list[j][0]))
+            {
+                items[j] = get_item_with_amount(customer.grocery_list[j][0]);
+                items[j].amount = customer.grocery_list[j][1];
+            }
+        }
+
+        write_receipt(customer, items, fptr);
+    }
+
+    fclose(fptr);
+    free(basename);
+    basename = NULL;
+    // free(filename_cpy);
+    return;
+}
+
+void write_receipt(customer_detail customer, gItem *list, FILE *fptr)
+{
+    gItem *beginning = list;
+
     float total = 0, item_total = 0;
     int change;
+
     fprintf(fptr, "Customer - %s\n\n", customer.name);
+    // printf("Customer - %s\n\n", customer.name);
 
     for (int i = 0; i < customer.no_of_items; i++)
     {
         change = -1 * list->amount;
+        // printf("change = %d\n", change);
+        // printf("beforestock = %d\n", list->stock);
         restock(list->key, change);
+        list->stock = list->stock + change;
+        // printf("afterstock = %d\n", list->stock);
         item_total = list->amount * list->price;
         fprintf(fptr, "%s X%d @ $%.2f\n", list->name, list->amount, list->price);
+        //checkfor stock threshhold
+        // printf("**%s :  %d < %d\n", list->name, list->stock, list->threshold);
         total += item_total;
         list++;
     }
@@ -317,6 +300,7 @@ void make_receipt(customer_detail customer, gItem *list, char *filename)
         {
             change = list->amount;
             restock(list->key, change);
+            list->stock = list->stock + change;
             list++;
         }
         fprintf(fptr, "Customer did not have enough money and was REJECTED\nThank you, come back soon!\n");
@@ -324,8 +308,35 @@ void make_receipt(customer_detail customer, gItem *list, char *filename)
 
     fprintf(fptr, "-------------------------------------------------------\n\n");
 
-    free(basename);
-    fclose(fptr);
+    //find items for inventory warning
+    list = beginning;
+    for (int i = 0; i < customer.no_of_items; i++)
+    {
+        if (list->stock < list->threshold)
+        {
+            insert(list->key);
+            // printf("\n\nInserted Item  = %d \n", list->key);
+        }
+        list++;
+    }
+}
+
+void print_warning()
+{
+    int restock_item, count;
+    count = data_count();
+    if (count != 0)
+    {
+        printf("\nWarning! The following Item(s) may need to be restocked:\n");
+    }
+    for (int k = 0; k < count; k++)
+    {
+        restock_item = get_data(k);
+        gItem item;
+        item = get_item_with_amount(restock_item);
+        printf("%d (%s): %d remain in stock, replenishment threshold is %d\n", item.key, item.name, item.stock, item.threshold);
+    }
+    deleteall();
 }
 
 // function to free all the allocated memory to customer.name

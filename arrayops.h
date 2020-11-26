@@ -4,11 +4,13 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-typedef struct node
+typedef struct node_array
 {
     int data;
-    struct node *next;
-} node;
+    struct node_array *next;
+} node_array;
+
+node_array *head = NULL;
 
 bool insert(int data);
 bool remove_data(int data);
