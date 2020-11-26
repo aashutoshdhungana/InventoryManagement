@@ -5,8 +5,8 @@
 #include <ctype.h>
 
 #include "checkout.h"
-#include "inventory.h"
-#include "inventory.c"
+//  #include "inventory.h"
+// #include "inventory.c"
 #include "arrayops.h"
 #include "arrayops.c"
 
@@ -31,17 +31,8 @@ customer_detail make_customer(char[], float, int[], int);
 void free_name_pointer_in_cd_struct();
 gItem get_item_with_amount(int key);
 
-// int checkout(char *filename)
-int main(void)
+int checkout(char *filename)
 {
-    //for now i separated loading hash function operation
-    //to a load_hash_table()
-    //later this wont be needing here as hash table would be loaded
-    //in menu.c
-    load();
-
-    char *filename = "test.txt";
-
     FILE *fptr = NULL;
 
     //open file
@@ -122,12 +113,6 @@ int main(void)
     atexit(free_name_pointer_in_cd_struct);
 
     make_receipt(filename);
-
-    /*
-    Warning! The following Item(s) may need to be restocked:
-102 (Apples): 8 remain in stock, replenishment threshold is 10
-039 (Wine): 9 remain in stock, replenishment threshold is 15
-    */
     print_warning();
 
     fclose(fptr);
