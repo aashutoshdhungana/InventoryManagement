@@ -4,7 +4,10 @@
 #include "checkout.c"
 #include "helpers.c"
 
+#define ESC 27
+
 void main_menu();
+void inventory_submenu();
 void print_main_menu();
 void print_inventory_submenu();
 
@@ -34,12 +37,7 @@ void main_menu()
     switch (option)
     {
     case 1:
-        system("CLS");
-        printf("\nMenu > Inventory\n");
-        printf("--------------------------------------------------------\n\n");
-
-        // int inventory_option;
-        print_inventory_submenu();
+        inventory_submenu();
         break;
     case 2:
         system("CLS");
@@ -48,9 +46,44 @@ void main_menu()
         string filename;
         filename = get_string("Enter a file name: ");
         checkout(filename);
+        printf("\n---------------------------------------------------------\n\n");
+        printf("Esc : main menu\t\tQ: Exit\n");
+        while (true)
+        {
+            char c = getchar();
+            if (c == 'Q' || c == 'q')
+                main_menu();
+            if (c == ESC)
+                break;
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+void inventory_submenu()
+{
+    system("CLS");
+    printf("\nMenu > Inventory\n");
+    printf("--------------------------------------------------------\n\n");
+    print_inventory_submenu();
+    int inventory_option = get_int("Enter an option: ");
+    switch (inventory_option)
+    {
+    case 1:
+        /* code */
+        break;
+    case 2:
+        /* code */
         break;
     case 3:
+        /* code */
         break;
+    case 4:
+        /* code */
+        break;
+
     default:
         break;
     }
@@ -72,4 +105,5 @@ void print_inventory_submenu()
     printf("2. Delete items\n");
     printf("3. Restock an item\n");
     printf("4. Restock all items under threshold\n");
+    printf("\n");
 }
