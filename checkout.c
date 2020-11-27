@@ -8,7 +8,7 @@
 #include <ctype.h>
 
 #include "checkout.h"
-#include "inventory.h"
+// #include "inventory.h"
 #include "inventory.c"
 
 #define MAX_LINE_SIZE 200
@@ -208,9 +208,11 @@ void make_receipt(char *filename)
     customer_detail customer;
 
     //generate name for receipt file
-    char *filename_cpy = malloc((strlen(filename)) * sizeof(char));
+    char *filename_cpy, *basename, *new_name;
+    filename_cpy = malloc((strlen(filename) + 1) * (sizeof(char)));
     strcpy(filename_cpy, filename);
-    char *basename = strtok(filename_cpy, ".");
+    basename = strtok(filename_cpy, ".");
+    basename = realloc(basename, (strlen(basename) + 13) * sizeof(char)); //13 = length of _receipt.txt
     strcat(basename, "_receipt.txt");
 
     FILE *fptr;
@@ -233,8 +235,8 @@ void make_receipt(char *filename)
     }
 
     fclose(fptr);
-    free(filename_cpy);
-    filename_cpy = NULL;
+    free(basename);
+    basename = NULL;
 
     return;
 }
@@ -302,14 +304,15 @@ void write_receipt(customer_detail customer, FILE *fptr)
         if ((itemDetail.stock < itemDetail.threshold) && !is_in_restock_list(gList->key))
         {
             restock_count++;
-            int size = sizeof(int) * (restock_count + 1);
+            size_t size = sizeof(int) * (restock_count + 1);
 
             int *temp = realloc(restock_list, size);
             if (temp == NULL)
             {
-                printf("Memory cannot be re allocated!");
+                printf("Memory cannot be re reallocated!");
             }
 
+            restock_list = temp;
             restock_list[restock_count - 1] = gList->key;
 
             restock_alarm = true;
