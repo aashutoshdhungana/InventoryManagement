@@ -8,35 +8,53 @@
 #include <ctype.h>
 
 #include "checkout.h"
-#include "inventory.h"
+// #include "inventory.h"
 #include "inventory.c"
-#include "arrayops.h"
-#include "arrayops.c"
 
 #define MAX_LINE_SIZE 200
 #define MAX_ITEM 200
 
 int no_of_customers = 0;
-int restok_item[MAX_SIZE];
+
 //pointer to reference memory as customer.name to be freed later
 char *ptr_to_free[MAX_ITEM];
 static int ptr_to_free_index = 0;
 
+//flag for restock
+bool restock_alarm = false;
+
+int *restock_list = NULL;
+static int restock_count = 0;
+
 queue *rear = NULL, *front = NULL;
 
-void write_receipt(customer_detail customer, gItem *list, FILE *fptr);
+//make a receipt file
 void make_receipt(char *filename);
+
+//write receipt for each customer
+void write_receipt(customer_detail customer, FILE *fptr);
+
+//print inventory warning for restocking
 void print_warning();
 
 // helper functions
 long extract_int(char *);
+
+//get struct variable storing customer details
 customer_detail make_customer(char[], float, int[], int);
+
+//free pointer used to memory allocation of customer.name
 void free_name_pointer_in_cd_struct();
 gItem get_item_with_amount(int key);
 
+//check id item is already in restock_list
+bool is_in_restock_list(int key);
+
+//checkout register file
 int checkout(char *filename)
 {
     FILE *fptr = NULL;
+    restock_list = (int *)malloc(sizeof(int));
 
     //open file
     fptr = fopen(filename, "r");
@@ -61,6 +79,7 @@ int checkout(char *filename)
     float cash;
     long num;
 
+    //parse register file and enqueue customer
     while (fgets(line, MAX_LINE_SIZE, fptr))
     {
         int glist[MAX_ITEM], gindex = 0;
@@ -92,7 +111,7 @@ int checkout(char *filename)
             {
                 cash = atof(token);
             }
-            //extract numbers and place in 2D array
+            //extract numbers and place in 1D array for grocey list
             else
             {
                 num = extract_int(token);
@@ -100,13 +119,15 @@ int checkout(char *filename)
             }
         }
 
-        // fill in struct
+        // get a customer with details
         customer_detail customer = make_customer(name, cash, glist, gindex / 2);
 
         // enqueue customer
         enqueue(customer);
+
         no_of_customers++;
     }
+
     free(line);
     free(str);
 
@@ -115,9 +136,13 @@ int checkout(char *filename)
      */
     atexit(free_name_pointer_in_cd_struct);
 
+    //make receipt file
     make_receipt(filename);
+
+    //print the inventory warning if necessary
     print_warning();
 
+    free(restock_list);
     fclose(fptr);
     return 0;
 }
@@ -149,10 +174,8 @@ customer_detail make_customer(char name[], float cash, int grocery_list[], int n
 {
     customer_detail customer;
 
-    int n = strlen(name) + 1; // +1 for '\0'
-
     // allocate memory for customer.name
-    customer.name = malloc(n * sizeof(char));
+    customer.name = malloc((strlen(name) + 1) * sizeof(char));
     if (customer.name == NULL)
     {
         printf("Memory allocation failed!");
@@ -168,16 +191,10 @@ customer_detail make_customer(char name[], float cash, int grocery_list[], int n
 
     customer.cash = cash;
 
-    /* store grocery list in two dimentional array
-     * glist[no_of_items][2]
-     */
-    int k = 0;
-    for (int i = 0; i < nO_of_items_in_g_list; i++)
+    for (int i = 0, k = 0; i < nO_of_items_in_g_list; i++, k += 2)
     {
-        for (int j = 0; j < 2; j++)
-        {
-            customer.grocery_list[i][j] = grocery_list[k++];
-        }
+        customer.grocery_list[i].key = grocery_list[k];
+        customer.grocery_list[i].amount = grocery_list[k + 1];
     }
 
     customer.no_of_items = nO_of_items_in_g_list;
@@ -185,146 +202,154 @@ customer_detail make_customer(char name[], float cash, int grocery_list[], int n
     return customer;
 }
 
-gItem get_item_with_amount(int key)
-{
-    int hashKey = hash(key);
-    gItem item;
-    node *temp;
-    temp = Table[hashKey];
-    while (temp->items.key != key)
-    {
-        printf("%d %d", temp->items.key, key);
-        temp = temp->next;
-    }
-    item.key = key;
-    item.price = temp->items.price;
-    item.stock = temp->items.stock;
-    item.threshold = temp->items.threshold;
-    strcpy(item.name, temp->items.name);
-    return item;
-}
-
 void make_receipt(char *filename)
 {
     // printf("%s", filename);
     customer_detail customer;
 
-    char *filename_cpy = malloc((strlen(filename)) * sizeof(char));
+    //generate name for receipt file
+    char *filename_cpy, *basename, *new_name;
+    filename_cpy = malloc((strlen(filename) + 1) * (sizeof(char)));
     strcpy(filename_cpy, filename);
-    char *basename = strtok(filename_cpy, ".");
+    basename = strtok(filename_cpy, ".");
+    basename = realloc(basename, (strlen(basename) + 13) * sizeof(char)); //13 = length of _receipt.txt
     strcat(basename, "_receipt.txt");
 
     FILE *fptr;
+
+    // open file for writing
+    fptr = fopen(basename, "w");
     if (fptr == NULL)
     {
         printf("Error opening file!\n");
         exit(1);
     }
 
-    fptr = fopen(basename, "w");
     for (int i = 0; i < no_of_customers; i++)
     {
-
+        //dequeue customer from queue
         customer = dequeue();
-        // printf("Dequeued customer is %s\n", customer.name);
 
-        gItem items[customer.no_of_items];
-
-        for (int j = 0; j < customer.no_of_items; j++)
-        {
-            // printf("grocery key = %d\n", customer.grocery_list[j][0]);
-            if (search(customer.grocery_list[j][0]))
-            {
-                items[j] = get_item_with_amount(customer.grocery_list[j][0]);
-                items[j].amount = customer.grocery_list[j][1];
-            }
-        }
-
-        write_receipt(customer, items, fptr);
+        //write receipt for dequeued customer
+        write_receipt(customer, fptr);
     }
 
     fclose(fptr);
     free(basename);
     basename = NULL;
-    // free(filename_cpy);
+
     return;
 }
 
-void write_receipt(customer_detail customer, gItem *list, FILE *fptr)
+void write_receipt(customer_detail customer, FILE *fptr)
 {
-    gItem *beginning = list;
 
     float total = 0, item_total = 0;
-    int change;
+    int change_by;
 
     fprintf(fptr, "Customer - %s\n\n", customer.name);
-    // printf("Customer - %s\n\n", customer.name);
 
+    itemData itemDetail;
+
+    // make pointer to the grocery_list array
+    gItem *gList, *beginning;
+    beginning = customer.grocery_list;
+    gList = beginning;
+
+    //go through grocery list one by one
     for (int i = 0; i < customer.no_of_items; i++)
     {
-        change = -1 * list->amount;
-        // printf("change = %d\n", change);
-        // printf("beforestock = %d\n", list->stock);
-        restock(list->key, change);
-        list->stock = list->stock + change;
-        // printf("afterstock = %d\n", list->stock);
-        item_total = list->amount * list->price;
-        fprintf(fptr, "%s X%d @ $%.2f\n", list->name, list->amount, list->price);
-        //checkfor stock threshhold
-        // printf("**%s :  %d < %d\n", list->name, list->stock, list->threshold);
+        //store item details(key, name, threshold, price etc) on itemDetails
+        itemDetail = query(gList->key);
+
+        //decrease the item in stock by amount
+        change_by = -1 * gList->amount;
+        restock(gList->key, change_by);
+
+        //calculate total amount for the item
+        item_total = gList->amount * itemDetail.price;
+
+        fprintf(fptr, "%s X%d @ $%.2f\n", itemDetail.name, gList->amount, itemDetail.price);
+
         total += item_total;
-        list++;
+        gList++;
     }
 
     fprintf(fptr, "\nTotal: $%.2f\n\n", total);
+
+    //check if customer has enough cash, if not add items back to stock
     if (total <= customer.cash)
     {
         fprintf(fptr, "Thank you, come back soon!\n");
     }
     else
     {
-        list = beginning;
+        gList = beginning;
         for (int i = 0; i < customer.no_of_items; i++)
         {
-            change = list->amount;
-            restock(list->key, change);
-            list->stock = list->stock + change;
-            list++;
+            change_by = gList->amount;
+            restock(gList->key, change_by);
+            gList++;
         }
         fprintf(fptr, "Customer did not have enough money and was REJECTED\nThank you, come back soon!\n");
     }
 
     fprintf(fptr, "-------------------------------------------------------\n\n");
 
-    //find items for inventory warning
-    list = beginning;
+    //find items needing restocking
+    gList = beginning;
     for (int i = 0; i < customer.no_of_items; i++)
     {
-        if (list->stock < list->threshold)
+        itemDetail = query(gList->key);
+        if ((itemDetail.stock < itemDetail.threshold) && !is_in_restock_list(gList->key))
         {
-            insert(list->key);
-            // printf("\n\nInserted Item  = %d \n", list->key);
+            restock_count++;
+            size_t size = sizeof(int) * (restock_count + 1);
+
+            int *temp = realloc(restock_list, size);
+            if (temp == NULL)
+            {
+                printf("Memory cannot be re reallocated!");
+            }
+
+            restock_list = temp;
+            restock_list[restock_count - 1] = gList->key;
+
+            restock_alarm = true;
         }
-        list++;
+        gList++;
     }
 }
 
 void print_warning()
 {
     int restock_item, count;
-    count = data_count();
-    if (count != 0)
+    itemData item_detail;
+
+    if (restock_count)
     {
         printf("\nWarning! The following Item(s) may need to be restocked:\n");
     }
-    for (int k = 0; k < count; k++)
+
+    for (int k = 0; k < restock_count; k++)
     {
-        restock_item = get_data(k);
-        gItem item;
-        item = get_item_with_amount(restock_item);
-        printf("%d (%s): %d remain in stock, replenishment threshold is %d\n", item.key, item.name, item.stock, item.threshold);
+        int restock_item = restock_list[k];
+        item_detail = query(restock_item);
+        printf("%d (%s): %d remain in stock, replenishment threshold is %d\n", item_detail.key, item_detail.name, item_detail.stock, item_detail.threshold);
     }
-    deleteall();
+}
+
+//find id item is already in restock_list
+bool is_in_restock_list(int key)
+{
+    for (int i = 0; i < restock_count; i++)
+    {
+        if (restock_list[i] == key)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 // function to free all the allocated memory to customer.name
@@ -363,7 +388,6 @@ void enqueue(customer_detail new_data)
         rear->next = new_node;
         rear = new_node;
     }
-    // printf("%s, %f, {%d %d}\n", new_node->data.name, new_node->data.cash, new_node->data.grocery_list[0][0], new_node->data.grocery_list[0][1]);
 }
 
 // dequeue customer detail
