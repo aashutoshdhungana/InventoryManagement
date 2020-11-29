@@ -11,7 +11,6 @@ The system uses hash table to manage all the items and queue to checkout a regis
 
 ## Main menu
 
----
 
 Main menu offers three options with command syntax
 
