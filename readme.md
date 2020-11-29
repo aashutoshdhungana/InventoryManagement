@@ -20,7 +20,9 @@ Main menu offers three options with command syntax
 
 2. checkout file
 
-> _checkout_ **filename** 3. exit
+> _checkout_ **filename**
+
+3. exit
 > _exit_
 
 </br>
