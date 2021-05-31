@@ -1,4 +1,4 @@
-// This helper functions are written by taking refrences from cs50 library to help i/o easier 
+// This helper functions are written to help make i/o easier
 #ifndef HELPERS_C
 #define HELPERS_C
 
@@ -8,6 +8,7 @@
 #include<ctype.h>
 #include<limits.h>
 #include<stdint.h>
+#include<stdbool.h>
 #include<math.h>
 #include<float.h>
 
@@ -17,9 +18,10 @@ int get_int(string msg);
 float get_float(string msg);
 string get_string(string msg);
 void atend();
-static unsigned int allocations = 0;
+static size_t allocations = 0;
 static string *strings = NULL;
-
+bool is_int(string);
+bool is_float(string);
 string get_string(string msg)
 {
     // checking if more string can be allocated
@@ -30,8 +32,8 @@ string get_string(string msg)
 
     printf("%s", msg);
     char c;
-    unsigned int pos = 0;
-    unsigned int size = 0;
+    size_t pos = 0;
+    size_t size = 0;
     string buffer = NULL;
     while ((c = fgetc(stdin)) != '\n' && c != EOF)
     {
@@ -48,7 +50,7 @@ string get_string(string msg)
     }
     string s = realloc(buffer, size + 1);
     s[pos] = '\0';
-    
+
     string *temp = realloc(strings, sizeof(string) * (allocations + 1));
     strings = temp;
     strings[allocations] = s;
@@ -92,6 +94,34 @@ int get_int(string msg)
             }
         }
     }
+}
+
+bool is_int(string str)
+{
+    int i = 0;
+    while(str[i] != '\0')
+    {
+        if(!isdigit(str[i]))
+        {
+            return 0;
+        }
+        i++;
+    }
+    return 1;
+}
+
+bool is_float(string str)
+{
+    int i = 0;
+    while(str[i] != '\0')
+    {
+        if(!isdigit(str[i]) && str[i] != '.')
+        {
+            return 0;
+        }
+        i++;
+    }
+    return 1;
 }
 
 // functions to free all memory of strings
